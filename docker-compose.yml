@@ -1,0 +1,45 @@
+version: '3'
+services:
+  app:
+    image: divya063/test:latest 
+    container_name: python_app
+    environment:
+      - PYTHONUNBUFFERED=1
+    labels: 
+      - app
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.5.2
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+    depends_on:
+      - app
+
+  kibana:
+    image: "docker.elastic.co/kibana/kibana:7.5.1"
+    ports:
+      - "5601:5601"
+    depends_on: 
+        - elasticsearch
+
+  filebeat:
+    image: "divya063/test:filebeat"
+    user: root
+    volumes:
+        # Bind-mount the Docker log directory from the app container, so Filebeat can read its files
+        - "/var/lib/docker/containers:/var/lib/docker/containers"
+        - /var/lib/docker:/var/lib/docker"
+        - /var/run/:/var/run/
+    depends_on: 
+        - app
+        - elasticsearch
+        - kibana
+
+ 
